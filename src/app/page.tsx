@@ -30,7 +30,8 @@ export default function DashboardPage() {
     try {
       const docs = await getDocuments(user.userId);
       setDocuments(docs);
-    } catch {
+    } catch (err) {
+      console.error('Failed to fetch documents:', err);
       // Fail gracefully — show empty list
       setDocuments([]);
     } finally {
