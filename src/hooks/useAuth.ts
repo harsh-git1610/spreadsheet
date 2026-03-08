@@ -6,7 +6,8 @@
  * - Google sign-in via Firebase Auth
  * - Stable random color assignment per session
  *
- * Graceful degradation: If Firebase is not configured, uses a local-only session.
+ * Graceful degradation: If Firebase is not configured, uses a local-only session
+ * persisted in sessionStorage to survive page navigation.
  */
 
 'use client';
@@ -35,6 +36,7 @@ function getRandomColor(): string {
 }
 
 const SESSION_COLOR_KEY = 'spreadsheet_user_color';
+const SESSION_USER_KEY = 'spreadsheet_local_user';
 
 function getSessionColor(): string {
     if (typeof window === 'undefined') return COLORS[0];
@@ -46,13 +48,42 @@ function getSessionColor(): string {
     return color;
 }
 
+/** Save local user session to sessionStorage */
+function saveLocalSession(user: UserSession): void {
+    if (typeof window === 'undefined') return;
+    sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(user));
+}
+
+/** Restore local user session from sessionStorage */
+function restoreLocalSession(): UserSession | null {
+    if (typeof window === 'undefined') return null;
+    const stored = sessionStorage.getItem(SESSION_USER_KEY);
+    if (!stored) return null;
+    try {
+        return JSON.parse(stored) as UserSession;
+    } catch {
+        return null;
+    }
+}
+
+/** Clear local user session from sessionStorage */
+function clearLocalSession(): void {
+    if (typeof window === 'undefined') return;
+    sessionStorage.removeItem(SESSION_USER_KEY);
+    sessionStorage.removeItem(SESSION_COLOR_KEY);
+}
+
 export function useAuth() {
     const [user, setUser] = useState<UserSession | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // If Firebase is not configured, allow local-only usage
+        // If Firebase is not configured, try to restore a local session
         if (!isFirebaseConfigured()) {
+            const restored = restoreLocalSession();
+            if (restored) {
+                setUser(restored);
+            }
             setLoading(false);
             return;
         }
@@ -88,13 +119,15 @@ export function useAuth() {
 
     const signInAsAnonymous = useCallback(async (displayName: string) => {
         if (!isFirebaseConfigured()) {
-            // Local-only fallback — create a fake user session
-            setUser({
+            // Local-only fallback — create and persist a local user session
+            const localUser: UserSession = {
                 userId: `local-${Date.now()}`,
                 name: displayName,
                 color: getSessionColor(),
                 isAnonymous: true,
-            });
+            };
+            saveLocalSession(localUser);
+            setUser(localUser);
             return;
         }
 
@@ -120,6 +153,7 @@ export function useAuth() {
                 // Ignore sign-out errors
             }
         }
+        clearLocalSession();
         setUser(null);
     }, []);
 

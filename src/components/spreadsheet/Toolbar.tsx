@@ -11,6 +11,7 @@ import Avatar from '@/components/ui/Avatar';
 import StatusIndicator from '@/components/ui/StatusIndicator';
 import Button from '@/components/ui/Button';
 import { exportToCSV, exportToJSON, downloadFile } from '@/lib/exportUtils';
+import { isFirebaseConfigured } from '@/lib/firebase';
 import type { CellFormatting, UserSession } from '@/types';
 
 interface ToolbarProps {
@@ -111,8 +112,17 @@ export default function Toolbar({ docTitle, user, onTitleChange, onSignOut }: To
             {/* Spacer */}
             <div className="flex-1" />
 
-            {/* Save status */}
-            <StatusIndicator status={saveStatus} />
+            {/* Save status or unsaved warning */}
+            {isFirebaseConfigured() ? (
+                <StatusIndicator status={saveStatus} />
+            ) : (
+                <div className="flex items-center gap-1.5 text-xs font-medium text-amber-400">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                    </svg>
+                    <span>Not saved</span>
+                </div>
+            )}
 
             {/* Presence avatars */}
             {userList.length > 0 && (
