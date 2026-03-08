@@ -112,6 +112,10 @@ export function useAuth() {
     }, []);
 
     const signInWithGoogle = useCallback(async () => {
+        if (!isFirebaseConfigured()) {
+            alert('Firebase is not configured yet. Please add your Firebase credentials to .env.local and restart the dev server.');
+            return;
+        }
         const auth = getAuthInstance();
         const provider = new GoogleAuthProvider();
         await signInWithPopup(auth, provider);
