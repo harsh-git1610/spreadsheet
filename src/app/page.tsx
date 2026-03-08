@@ -24,10 +24,11 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
-  // Fetch documents
+  // Fetch documents for the current user
   const fetchDocuments = useCallback(async () => {
+    if (!user) return;
     try {
-      const docs = await getDocuments();
+      const docs = await getDocuments(user.userId);
       setDocuments(docs);
     } catch {
       // Fail gracefully — show empty list
@@ -35,7 +36,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (user) {

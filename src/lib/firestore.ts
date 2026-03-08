@@ -18,6 +18,7 @@ import {
     deleteDoc,
     updateDoc,
     query,
+    where,
     orderBy,
     serverTimestamp,
     Timestamp,
@@ -51,10 +52,14 @@ export async function createDocument(input: CreateDocumentInput): Promise<string
     return docRef.id;
 }
 
-/** Get all documents ordered by updatedAt descending */
-export async function getDocuments(): Promise<SpreadsheetDocument[]> {
+/** Get all documents ordered by updatedAt descending for a specific user */
+export async function getDocuments(ownerId: string): Promise<SpreadsheetDocument[]> {
     const db = getDb();
-    const q = query(collection(db, 'documents'), orderBy('updatedAt', 'desc'));
+    const q = query(
+        collection(db, 'documents'),
+        where('ownerId', '==', ownerId),
+        orderBy('updatedAt', 'desc')
+    );
     const snapshot = await getDocs(q);
     return snapshot.docs.map((d) => ({
         id: d.id,
