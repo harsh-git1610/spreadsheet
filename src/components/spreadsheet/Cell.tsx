@@ -41,7 +41,8 @@ function CellComponent({ cellKey: key, onCellCommit }: CellProps) {
                 inputRef.current?.select();
             });
         }
-    }, [isEditing, cell]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isEditing]);
 
     const handleClick = useCallback(() => {
         setActiveCell(key);

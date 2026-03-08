@@ -25,19 +25,26 @@ export function useRealtimeSync(docId: string, user: UserSession | null) {
     const setSaveStatus = useSpreadsheetStore((s) => s.setSaveStatus);
     const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pendingWritesRef = useRef<Map<string, Partial<CellData>>>(new Map());
-    const isLocalUpdate = useRef(false);
 
     // Subscribe to realtime cell updates from Firestore
     useEffect(() => {
         if (!isFirebaseConfigured()) return;
 
         const unsubscribe = subscribeToCells(docId, (cells) => {
-            // Skip if this was triggered by our own write
-            if (isLocalUpdate.current) {
-                isLocalUpdate.current = false;
-                return;
+            if (pendingWritesRef.current.size > 0) {
+                // Merge incoming cells but preserve local pending optimistic writes
+                const merged = { ...cells };
+                for (const [key, pendingData] of pendingWritesRef.current.entries()) {
+                    if (merged[key]) {
+                        merged[key] = { ...merged[key], ...pendingData };
+                    } else {
+                        merged[key] = pendingData as CellData;
+                    }
+                }
+                setCells(merged);
+            } else {
+                setCells(cells);
             }
-            setCells(cells);
         });
 
         return () => unsubscribe();
@@ -59,12 +66,12 @@ export function useRealtimeSync(docId: string, user: UserSession | null) {
                 promises.push(firestoreUpdateCell(docId, key, data));
             }
             await Promise.all(promises);
-            isLocalUpdate.current = true;
             setSaveStatus('saved');
 
             // Reset to idle after 2s
             setTimeout(() => setSaveStatus('idle'), 2000);
-        } catch {
+        } catch (error) {
+            console.error('Firestore save error:', error);
             setSaveStatus('error');
         }
     }, [docId, setSaveStatus]);
@@ -77,14 +84,14 @@ export function useRealtimeSync(docId: string, user: UserSession | null) {
 
             if (!isFirebaseConfigured()) return;
 
-            // Queue the write
-            pendingWritesRef.current.set(key, {
-                value: data.value,
-                formula: data.formula,
-                computedValue: data.computedValue,
-                updatedBy: user?.userId,
-                formatting: data.formatting,
-            });
+            // Queue the write (Firestore rejects 'undefined' values, so we filter them out)
+            const payload: Partial<CellData> = { value: data.value };
+            if (data.formula !== undefined) payload.formula = data.formula;
+            if (data.computedValue !== undefined) payload.computedValue = data.computedValue;
+            if (user?.userId) payload.updatedBy = user.userId;
+            if (data.formatting !== undefined) payload.formatting = data.formatting;
+
+            pendingWritesRef.current.set(key, payload);
 
             // Debounce the Firestore write
             if (debounceTimerRef.current) {

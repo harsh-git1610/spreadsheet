@@ -106,6 +106,17 @@ export default function Toolbar({ docTitle, user, onTitleChange, onSignOut }: To
 
     return (
         <div className="flex items-center h-12 bg-zinc-900/95 backdrop-blur-sm border-b border-zinc-700/60 px-4 gap-3">
+            {/* Home / Dashboard button */}
+            <a
+                href="/"
+                title="Back to dashboard"
+                className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-900/20 hover:scale-105 transition-transform flex-shrink-0"
+            >
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+            </a>
+
             {/* Document title */}
             <input
                 type="text"

@@ -84,8 +84,14 @@ export default function EditorPage() {
     // Handle cell commit from Grid or FormulaBar
     const handleCellCommit = useCallback(
         (key: string, value: string) => {
-            if (!value.trim()) return;
-            const data = buildCellData(value, user?.userId);
+            const data = value.trim()
+                ? buildCellData(value, user?.userId)
+                : {
+                    value: '',
+                    formula: undefined,
+                    computedValue: undefined,
+                    updatedBy: user?.userId,
+                };
 
             if (isFirebaseConfigured()) {
                 writeCell(key, data);

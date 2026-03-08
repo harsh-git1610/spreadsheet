@@ -31,7 +31,7 @@ export default function Grid({ onCellCommit }: GridProps) {
     const columns = useMemo(() => generateColumnHeaders(DEFAULT_COLS), []);
     const rows = useMemo(() => generateRowNumbers(DEFAULT_ROWS), []);
     const containerRef = useRef<HTMLDivElement>(null);
-    const { handleKeyDown } = useSpreadsheet();
+    const { handleKeyDown } = useSpreadsheet({ onCellCommit });
 
     // Track scroll position for virtualization
     const [scrollTop, setScrollTop] = useState(0);

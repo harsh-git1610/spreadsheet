@@ -11,7 +11,11 @@ import { useSpreadsheetStore } from '@/store/spreadsheetStore';
 import { colToIndex, indexToCol, cellKey } from '@/lib/formulaEngine';
 import { DEFAULT_COLS, DEFAULT_ROWS } from '@/lib/cellUtils';
 
-export function useSpreadsheet() {
+interface UseSpreadsheetProps {
+    onCellCommit?: (key: string, value: string) => void;
+}
+
+export function useSpreadsheet({ onCellCommit }: UseSpreadsheetProps = {}) {
     const activeCell = useSpreadsheetStore((s) => s.activeCell);
     const editingCell = useSpreadsheetStore((s) => s.editingCell);
     const setActiveCell = useSpreadsheetStore((s) => s.setActiveCell);
@@ -81,7 +85,11 @@ export function useSpreadsheet() {
                     break;
                 case 'Delete':
                 case 'Backspace':
-                    // Clear cell — handled by editor
+                    // Clear the active cell by committing an empty value
+                    if (activeCell && onCellCommit) {
+                        onCellCommit(activeCell, '');
+                    }
+                    e.preventDefault();
                     break;
                 case 'F2':
                     if (activeCell) {
@@ -100,7 +108,7 @@ export function useSpreadsheet() {
                     break;
             }
         },
-        [activeCell, editingCell, navigate, startEditing, stopEditing]
+        [activeCell, editingCell, navigate, startEditing, stopEditing, onCellCommit]
     );
 
     return { handleKeyDown, navigate };
